@@ -3,14 +3,13 @@
 namespace JeroenG\Packager;
 
 use Illuminate\Console\Command;
-use JeroenG\Packager\PackagerHelper;
 
 /**
  * Get an existing package from a remote Github repository.
  *
  * @package Packager
  * @author JeroenG
- * 
+ *
  **/
 class PackagerGetCommand extends Command
 {
@@ -33,7 +32,7 @@ class PackagerGetCommand extends Command
     /**
      * Create a new command instance.
      *
-     * @return void
+     * @param \JeroenG\Packager\PackagerHelper $helper
      */
     public function __construct(PackagerHelper $helper)
     {
@@ -53,48 +52,52 @@ class PackagerGetCommand extends Command
         $bar->start();
 
         // Common variables
-        $origin = rtrim($this->argument('url'), '/').'/archive/'.$this->option('branch').'.zip';
+        $origin = rtrim($this->argument('url'), '/') . '/archive/' . $this->option('branch') . '.zip';
         $pieces = explode('/', $origin);
         $vendor = $pieces[3];
         $name = $pieces[4];
-        $cVendor = ucfirst($vendor);
-        $cName = ucfirst($name);
-        $path = getcwd().'/packages/';
-        $fullPath = $path.$vendor.'/'.$name;
+        $cVendor = $this->helper->makeName($vendor);
+        $cName = $this->helper->makeName($name);
+        $path = getcwd() . '/packages/';
+        $fullPath = $path . $vendor . '/' . $name;
         $requirement = '"psr-4": {
-            "'.$cVendor.'\\\\'.$cName.'\\\\": "packages/'.$vendor.'/'.$name.'/src",';
+            "' . $cVendor . '\\\\' . $cName . '\\\\": "packages/' . $vendor . '/' . $name . '/src",';
         $appConfigLine = 'App\Providers\RouteServiceProvider::class,
 
-        '.ucfirst($vendor).'\\'.ucfirst($name).'\\'.ucfirst($name).'ServiceProvider::class,';
+        ' . $cVendor . '\\' . $cName . '\\' . $cName . 'ServiceProvider::class,';
 
         // Start creating the package        
-        $this->info('Creating package '.$vendor.'\\'.$name.'...');
-            $this->helper->checkExistingPackage($path, $vendor, $name);
+        $this->info('Creating package ' . $vendor . '\\' . $name . '...');
+        $this->helper->checkExistingPackage($path, $vendor, $name);
         $bar->advance();
 
         // Create the package directory
         $this->info('Creating packages directory...');
-            $this->helper->makeDir($path);
+        $this->helper->makeDir($path);
         $bar->advance();
 
         // Create the vendor directory
         $this->info('Creating vendor...');
-         $this->helper->makeDir($path.$vendor);
+        $this->helper->makeDir($path . $vendor);
         $bar->advance();
 
         // Get the skeleton repo from the PHP League
         $this->info('Downloading from Github...');
-            $this->helper->download($zipFile = $this->helper->makeFilename(), $origin)
-                 ->extract($zipFile, $path.$vendor)
-                 ->cleanUp($zipFile);
-            rename($path.$vendor.'/'.$name. '-'.$this->option('branch'), $fullPath);
+        $this->helper->download($zipFile = $this->helper->makeFilename(), $origin)
+            ->extract($zipFile, $path . $vendor)
+            ->cleanUp($zipFile);
+        rename($path . $vendor . '/' . $name . '-' . $this->option('branch'), $fullPath);
         $bar->advance();
 
         // Add it to composer.json
         $this->info('Adding package to composer and app...');
-            $this->helper->replaceAndSave(getcwd().'/composer.json', '"psr-4": {', $requirement);
-            // And add it to the providers array in config/app.php
-            $this->helper->replaceAndSave(getcwd().'/config/app.php', 'App\Providers\RouteServiceProvider::class,', $appConfigLine);
+        $this->helper->replaceAndSave(getcwd() . '/composer.json', '"psr-4": {', $requirement);
+        // And add it to the providers array in config/app.php
+        $this->helper->replaceAndSave(
+            getcwd() . '/config/app.php',
+            'App\Providers\RouteServiceProvider::class,',
+            $appConfigLine
+        );
         $bar->advance();
 
         // Finished creating the package, end of the progress bar

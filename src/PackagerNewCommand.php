@@ -61,15 +61,14 @@ class PackagerNewCommand extends Command
         $name = $this->argument('name');
         $path = getcwd() . '/packages/';
         $fullPath = $path . $vendor . '/' . $name;
-        $cVendor = ucfirst($vendor);
-        $cName = ucfirst($name);
+        $cVendor = $this->helper->makeName($vendor);
+        $cName = $this->helper->makeName($name);
         $requireSupport = '"illuminate/support": "~5.1",
         "php"';
         $requirement = '"psr-4": {
             "' . $cVendor . '\\\\' . $cName . '\\\\": "packages/' . $vendor . '/' . $name . '/src",';
         $appConfigLine = 'App\Providers\RouteServiceProvider::class,
-
-        ' . ucfirst($vendor) . '\\' . ucfirst($name) . '\\' . ucfirst($name) . 'ServiceProvider::class,';
+        ' . $cVendor . '\\' . $cName . '\\' . $cName . 'ServiceProvider::class,';
 
         // Start creating the package        
         $this->info('Creating package ' . $vendor . '\\' . $name . '...');
@@ -99,7 +98,7 @@ class PackagerNewCommand extends Command
 
         // Creating a Laravel Service Provider in the src directory
         $this->info('Creating service provider...');
-        $newProvider = $fullPath . '/src/' . ucfirst($name) . 'ServiceProvider.php';
+        $newProvider = $fullPath . '/src/' . $cName . 'ServiceProvider.php';
         $this->helper->replaceAndSave(
             __DIR__ . '/ServiceProvider.stub',
             ['{{vendor}}', '{{name}}'],
