@@ -89,7 +89,7 @@ class PackagerNewCommand extends Command
         $this->info('Downloading skeleton...');
         $this->helper->download(
             $zipFile = $this->helper->makeFilename(),
-            'http://github.com/thephpleague/skeleton/archive/master.zip'
+            config('packager.skeleton')
         )
             ->extract($zipFile, $path . $vendor)
             ->cleanUp($zipFile);

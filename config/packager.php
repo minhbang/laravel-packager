@@ -1,6 +1,7 @@
 <?php
 
 return [
+    'skeleton' => 'http://github.com/thephpleague/skeleton/archive/master.zip',
     // Author Fullname
     'author_name'     => 'Minh Bang',
     // Author Github Username
