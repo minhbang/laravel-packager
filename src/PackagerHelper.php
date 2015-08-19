@@ -122,6 +122,15 @@ class PackagerHelper
     }
 
     /**
+     * @param string $studly_caps
+     * @return string
+     */
+    function makeWords($studly_caps)
+    {
+        return implode(' ', preg_split('/(?<=[a-z])(?=[A-Z])|(?=[A-Z][a-z])/', $studly_caps, -1, PREG_SPLIT_NO_EMPTY));
+    }
+
+    /**
      * Download the temporary Zip to the given file
      *
      * @param  string $zipFile

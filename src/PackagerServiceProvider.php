@@ -12,7 +12,7 @@ use Illuminate\Support\ServiceProvider;
  *
  * @package Packager
  * @author JeroenG
- * 
+ *
  **/
 class PackagerServiceProvider extends ServiceProvider
 {
@@ -40,7 +40,12 @@ class PackagerServiceProvider extends ServiceProvider
      */
     public function boot()
     {
-        // Not really anything to boot.
+        $this->publishes(
+            [
+                __DIR__ . '/../config/packager.php' => config_path('packager.php'),
+            ],
+            'config'
+        );
     }
 
     /**
@@ -50,6 +55,7 @@ class PackagerServiceProvider extends ServiceProvider
      */
     public function register()
     {
+        $this->mergeConfigFrom(__DIR__ . '/../config/packager.php', 'packager');
         $this->commands($this->commands);
     }
 
@@ -60,6 +66,6 @@ class PackagerServiceProvider extends ServiceProvider
      */
     public function provides()
     {
-        return array('packager');
+        return ['packager'];
     }
 }

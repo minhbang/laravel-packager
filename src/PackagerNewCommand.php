@@ -53,7 +53,7 @@ class PackagerNewCommand extends Command
     public function handle()
     {
         // Start the progress bar
-        $bar = $this->helper->barSetup($this->output->createProgressBar(7));
+        $bar = $this->helper->barSetup($this->output->createProgressBar(8));
         $bar->start();
 
         // Common variables
@@ -64,7 +64,7 @@ class PackagerNewCommand extends Command
         $cVendor = $this->helper->makeName($vendor);
         $cName = $this->helper->makeName($name);
         $requireSupport = '"illuminate/support": "~5.1",
-        "php"';
+        "php" : ' . '"' . config('packager.php_required') . '"';
         $requirement = '"psr-4": {
             "' . $cVendor . '\\\\' . $cName . '\\\\": "packages/' . $vendor . '/' . $name . '/src",';
         $appConfigLine = 'App\Providers\RouteServiceProvider::class,
@@ -114,14 +114,74 @@ class PackagerNewCommand extends Command
             'namespace League\Skeleton;',
             'namespace ' . $cVendor . '\\' . $cName . ';'
         );
-        $search = ['league/:package_name', '"php"', 'League\\\\Skeleton\\\\', 'League\\\\Skeleton\\\\Test\\\\'];
+
+        // Replacing on composer.json
+        $search = [
+            'thephpleague',
+            'league',
+            ':package_name',
+            '"php" : ">=5.3.0"',
+            'League\\\\Skeleton\\\\',
+            'League\\\\Skeleton\\\\Test\\\\',
+            ':author_name',
+            ':author_email',
+            ':author_website',
+            ':package_description',
+        ];
         $replace = [
-            $vendor . '/' . $name,
+            config('packager.author_username'),
+            $vendor,
+            $name,
             $requireSupport,
             $cVendor . '\\\\' . $cName . '\\\\',
-            $cVendor . '\\\\' . $cName . '\\\\Test\\\\'
+            $cVendor . '\\\\' . $cName . '\\\\Test\\\\',
+            config('packager.author_name'),
+            config('packager.author_email'),
+            config('packager.author_website'),
+            $this->helper->makeWords($cName) . ' Package',
         ];
         $this->helper->replaceAndSave($fullPath . '/composer.json', $search, $replace);
+        $bar->advance();
+
+        // Replacing correct information
+        $this->info('Replacing correct information...');
+        $this->helper->replaceAndSave(
+            $fullPath . '/CHANGELOG.md',
+            [':package_name'],
+            ["$vendor/$name"]
+        );
+
+        $this->helper->replaceAndSave(
+            $fullPath . '/CONTRIBUTING.md',
+            ['thephpleague', ':package_name'],
+            [config('packager.author_username'), $name]
+        );
+
+        $this->helper->replaceAndSave(
+            $fullPath . '/LICENSE.md',
+            [':author_name', ':author_email'],
+            [config('packager.author_name'), config('packager.author_email')]
+        );
+
+        $this->helper->replaceAndSave(
+            $fullPath . '/README.md',
+            [
+                'thephpleague',
+                ':author_username',
+                'league',
+                ':package_name',
+                ':author_name',
+                '[link-author]',
+            ],
+            [
+                config('packager.author_username'),
+                config('packager.author_username'),
+                $vendor,
+                $name,
+                config('packager.author_name'),
+                '[' . config('packager.author_website') . ']',
+            ]
+        );
         $bar->advance();
 
         // Add it to composer.json
@@ -138,7 +198,13 @@ class PackagerNewCommand extends Command
         // Finished creating the package, end of the progress bar
         $bar->finish();
         $this->info('Package created successfully!');
-        $this->output->newLine(2);
         $bar = null;
+        if (app()->environment('local') && $finish_cmd = config('packager.finish_cmd')) {
+            $this->output->newLine(1);
+            $this->info('Running finish command...');
+            $this->output->newLine(1);
+            shell_exec($finish_cmd);
+        }
+        $this->output->newLine(2);
     }
 }
